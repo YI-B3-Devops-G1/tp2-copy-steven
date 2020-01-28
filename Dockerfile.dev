@@ -1,0 +1,16 @@
+FROM node:lts-alpine
+
+ENV NODE_ENV development
+ENV API_PORT 3000
+
+# Create app directory
+WORKDIR /app
+RUN mkdir -p /app
+RUN chown -R node:node /app
+USER node
+
+COPY package*.json ./
+RUN npm install
+
+# Commands at runtime
+CMD [ "npm", "start" ]
