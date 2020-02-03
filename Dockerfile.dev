@@ -14,3 +14,4 @@ RUN npm install
 
 # Commands at runtime
 CMD [ "npm", "start" ]
+

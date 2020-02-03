@@ -3,8 +3,8 @@ version: '3.1'
 services:
   reverseproxy:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ./nginx
+      dockerfile: Dockerfile
     depends_on:
       - nodeapi
     container_name: devops-nginx
@@ -13,7 +13,8 @@ services:
       - ./nginx/conf.d/:/etc/nginx/conf.d
     restart: on-failure
     ports:
-      - 3000:3000 # HOST:CLIENT
+      # Host:Client
+      - 3000:3000 
   
   nodeapi:
     build:
@@ -25,10 +26,12 @@ services:
     container_name: devops-nodeapi
     hostname: nodeapi
     environment:
+      #Postgresql db
       - DB_HOST=postgres  
       - DB_PORT=5432     
       - DB_USER=theejkb
       - DB_PASSWORD=azertyuiop
+      - REDIS_HOST=redis
     volumes:
       - .:/app
     restart: on-failure
@@ -46,3 +49,4 @@ services:
     image: redis:alpine3.11
     container_name: devops-redis
     restart: on-failure
+    hostname: redis-host

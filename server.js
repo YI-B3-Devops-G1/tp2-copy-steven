@@ -1,77 +1,45 @@
+'use strict';
 
- const express = require('express');
+const Pool = require('pg').Pool;
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+});
 
- // Constants
- const PORT = 3000;
- const HOST = '127.0.0.1';
- 
- // App
- const app = express();
- app.get('/', (req, res) => {
-     res.send('Hello World');
- });
- 
- app.listen(PORT, HOST);
- console.log(`Running on http://${HOST}:${PORT}`);
-
-
+const redis = require('redis'); // Port 6379
+const client = redis.createClient({
+    host: process.env.REDIS_HOST
+});
 
 
+const express = require('express');
+const app = express();
 
+const port = process.env.API_PORT;
 
-// // Create instances
-// const Express = require('express');
-// const WebServer = Express();
-// const PORT = process.env.API_PORT || 3000;
-// const { Client } = require('pg')
-// const redis = require("redis")
+client.on('connect', function () {
+    console.log('Redis client connected');
+});
 
+app.get('/', function (req, res) {
+    res.json({ message: 'Message d\'accueil' })
+});
 
-// // Setup instances
-// const pgClient = new Client({
-//     host: process.env.DB_HOST,
-//     database: process.env.DB_NAME,
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     port: process.env.DB_PORT,
-// })
+app.get('/status', async (req, res) => {
+    const postgresQuery = 'SELECT pg_postmaster_start_time() as uptime;';
+    const result = await pool.query(postgresQuery);
+    const uptime = result.rows[0].uptime;
 
-// WebServer.listen(PORT, (error) => {
-//     if(error) {
-//         throw error;
-//     }
+    res.json({
+        status: 'OK',
+        postgresUptime: uptime,
+        redisConnectedClients: Number(client.server_info.connected_clients)
+    });
+});
 
-//     pgClient.connect()
-
-//     console.log('## API STARTED !')
-//     console.log(`## Express server listening on local container port ${PORT}`);
-// });
-
-// const redisClient = redis.createClient({ host: process.env.REDIS_HOST });
-
-// //
-// WebServer.get('/', function (req, res)
-// {
-//     res.json({ message: "Hello World" });
-// });
-
-
-// WebServer.get('/status', async (req, res) => {
-//     const postgresQuery = 'SELECT date_trunc(\'second\', current_timestamp - pg_postmaster_start_time()) as uptime;'
-//     const result = await pgClient.query(postgresQuery)
-//     const uptime = result.rows[0].uptime
-//     const uptimeString = () => {
-//         let time = ''
-
-//         time += uptime.hours ? `${uptime.hours}h ` : ''
-//         time += uptime.minutes ? `${uptime.minutes}m ` : ''
-//         time += uptime.seconds ? `${uptime.seconds}s` : ''
-
-//         return time
-//     }
-//     res.json({
-//         status: 'ok',
-//         postgresUptime: uptimeString(),
-//         redisConnectedClients: Number(redisClient.server_info.connected_clients)
-//     })
-// })
+app.listen(port, () => {
+    console.log('Actuellement sur le port : ' + port);
+});
